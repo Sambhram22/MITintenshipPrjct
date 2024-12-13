@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download and Upload Excel with Chat Interaction</title>
+    <!-- Include the SheetJS library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Add styling -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #0066cc;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .chat-body {
+            margin-top: 20px;
+        }
+
+        .message-box {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #e9f7fe;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+        }
+
+        .chat-btn:hover {
+            background-color: #004b99;
+        }
+
+        .form-control {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .form-control:focus {
+            border-color: #0066cc;
+        }
+
+        .response-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Chat Interface -->
+    <div class="chat-container">
+        <div class="chat-header">Faculty Excel Data Upload</div>
+        <div class="chat-body">
+            <div class="message-box">
+                <p>Welcome! Would you like to download a sample Excel file or upload your own?</p>
+            </div>
+
+            <!-- Download Button -->
+            <button class="chat-btn" id="downloadExcel">Download Sample Excel</button>
+            <br><br>
+
+            <!-- File Upload Form -->
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="message-box">
+                    <label>Select an Excel File to Upload:</label><br><br>
+                    <input type="file" name="file" class="form-control" required><br><br>
+                    <button type="submit" class="chat-btn">Upload and Save to Database</button>
+                </div>
+            </form>
+
+            <!-- Add Single Faculty Entry Form -->
+            <div class="message-box">
+                <p>Add a Single Faculty Member:</p>
+                <form id="addSingleEntryForm" method="POST">
+                    {% csrf_token %}
+                    <label for="facultyID">Faculty ID:</label><br>
+                    <input type="text" id="facultyID" name="facultyID" class="form-control" placeholder="e.g., FAC005" required><br>
+
+                    <label for="facultyName">Name:</label><br>
+                    <input type="text" id="facultyName" name="facultyName" class="form-control" placeholder="e.g., Dr. Emily Clark" required><br>
+
+                    <label for="designation">Designation:</label><br>
+                    <input type="text" id="designation" name="designation" class="form-control" placeholder="e.g., Professor" required><br><br>
+
+                    <button type="submit" class="chat-btn">Add Faculty</button>
+                </form>
+            </div>
+
+            <!-- Response message -->
+            <div id="responseMessage" class="response-message"></div>
+        </div>
+    </div>
+
+    <!-- Script for Excel Download -->
+    <script>
+        document.getElementById('downloadExcel').addEventListener('click', function () {
+            const sampleData = [
+                ['Sl.No', 'ID', 'Name of the Faculty', 'Designation'],
+                [1, 'FAC001', 'Dr. John Doe', 'Professor'],
+                [2, 'FAC002', 'Ms. Jane Smith', 'Assistant Professor'],
+                [3, 'FAC003', 'Mr. Bob Brown', 'Lecturer'],
+                [4, 'FAC004', 'Ms. Alice Johnson', 'Head of Department']
+            ];
+
+            const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Faculty Data');
+
+            XLSX.writeFile(workbook, 'SampleFacultyData.xlsx');
+        });
+
+        // Handle file upload
+        document.getElementById('uploadForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "uploadFacultyList" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseMessage = document.getElementById('responseMessage');
+                responseMessage.style.display = 'block';
+
+                if (data.result === true) {
+                    responseMessage.classList.add('success');
+                    responseMessage.textContent = 'File uploaded successfully!';
+                } else {
+                    responseMessage.classList.add('error');
+                    responseMessage.textContent = 'Error uploading file: ' + data.message;
+                }
+            })
+            .catch(() => {
+                const responseMessage = document.getElementById('responseMessage');
+                responseMessage.style.display = 'block';
+                responseMessage.classList.add('error');
+                responseMessage.textContent = 'An error occurred during the upload.';
+            });
+        });
+
+        // Handle single entry submission
+        document.getElementById('addSingleEntryForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+
+            fetch('{% url "addFacultyRow" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseMessage = document.getElementById('responseMessage');
+                responseMessage.style.display = 'block';
+
+                if (data.result === true) {
+                    responseMessage.classList.add('success');
+                    responseMessage.textContent = 'Faculty member added successfully!';
+                } else {
+                    responseMessage.classList.add('error');
+                    responseMessage.textContent = 'Error adding faculty member: ' + data.message;
+                }
+            })
+            .catch(() => {
+                const responseMessage = document.getElementById('responseMessage');
+                responseMessage.style.display = 'block';
+                responseMessage.classList.add('error');
+                responseMessage.textContent = 'An error occurred while adding the faculty member.';
+            });
+        });
+    </script>
+</body>
+</html>
