@@ -110,7 +110,7 @@
             <br><br>
 
             <!-- File Upload Form -->
-            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+            <form id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'uploadFacultyList' %}">
                 {% csrf_token %}
                 <div class="message-box">
                     <label>Select an Excel File to Upload:</label><br><br>
@@ -122,8 +122,11 @@
             <!-- Add Single Faculty Entry Form -->
             <div class="message-box">
                 <p>Add a Single Faculty Member:</p>
-                <form id="addSingleEntryForm" method="POST">
+                <form id="addSingleEntryForm" method="POST" action="{% url 'addFacultyRow' %}">
                     {% csrf_token %}
+                    <label for="seniority">Seniority:</label><br>
+                    <input type="number" id="seniority" name="seniority" class="form-control" placeholder="e.g., A number like 5" required><br>
+
                     <label for="facultyID">Faculty ID:</label><br>
                     <input type="text" id="facultyID" name="facultyID" class="form-control" placeholder="e.g., FAC005" required><br>
 
@@ -162,70 +165,14 @@
 
         // Handle file upload
         document.getElementById('uploadForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);
-
-            fetch('{% url "uploadFacultyList" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                const responseMessage = document.getElementById('responseMessage');
-                responseMessage.style.display = 'block';
-
-                if (data.result === true) {
-                    responseMessage.classList.add('success');
-                    responseMessage.textContent = 'File uploaded successfully!';
-                } else {
-                    responseMessage.classList.add('error');
-                    responseMessage.textContent = 'Error uploading file: ' + data.message;
-                }
-            })
-            .catch(() => {
-                const responseMessage = document.getElementById('responseMessage');
-                responseMessage.style.display = 'block';
-                responseMessage.classList.add('error');
-                responseMessage.textContent = 'An error occurred during the upload.';
-            });
+            const responseMessage = document.getElementById('responseMessage');
+            responseMessage.style.display = 'none';
         });
 
         // Handle single entry submission
         document.getElementById('addSingleEntryForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);
-
-            fetch('{% url "addFacultyRow" %}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                const responseMessage = document.getElementById('responseMessage');
-                responseMessage.style.display = 'block';
-
-                if (data.result === true) {
-                    responseMessage.classList.add('success');
-                    responseMessage.textContent = 'Faculty member added successfully!';
-                } else {
-                    responseMessage.classList.add('error');
-                    responseMessage.textContent = 'Error adding faculty member: ' + data.message;
-                }
-            })
-            .catch(() => {
-                const responseMessage = document.getElementById('responseMessage');
-                responseMessage.style.display = 'block';
-                responseMessage.classList.add('error');
-                responseMessage.textContent = 'An error occurred while adding the faculty member.';
-            });
+            const responseMessage = document.getElementById('responseMessage');
+            responseMessage.style.display = 'none';
         });
     </script>
 </body>

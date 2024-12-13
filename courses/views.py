@@ -104,12 +104,9 @@ def addLessonDetails(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    
-
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 def uploadFacultyList(request):
-    if 'file' in request.FILES:
-        # Handle Excel file upload
+    if request.method == 'POST':
         try:
             # Get the uploaded file
             excel_file = request.FILES['file']
@@ -117,12 +114,12 @@ def uploadFacultyList(request):
 
             # Check if the file has the correct extension
             if not excel_file.name.endswith('.xlsx') and not excel_file.name.endswith('.xls'):
-                return JsonResponse({
+                return render(request, 'courses/index.html', {
                     "result": False,
-                    "message": "Uploaded file is not a valid Excel file."
+                    "message": "File not proper"
                 })
 
-            # Use pandas to read the Excel file
+            # Use pandas to read the Excel file (openpyxl is used under the hood)
             df = pd.read_excel(excel_file)
             print(df)
 
@@ -130,38 +127,44 @@ def uploadFacultyList(request):
             for index, row in df.iterrows():
                 # Extract data from the row
                 seniority = row.get('Sl.No')
-                faculty_id = row.get('ID')
+                id = row.get('ID')
                 faculty_name = row.get('Name of the Faculty', '')  # Default empty string if not present
                 faculty_designation = row.get('Designation', '')  # Default empty string if not present
 
-                # Create a new faculty record in the database
+                # Create a new student record in the database
                 tb_faculty.objects.create(
                     seniority=seniority,
-                    faculty_id=faculty_id,
+                    faculty_id=id,
                     faculty_name=faculty_name,
                     faculty_password="Manipal@123",
                     role_id=1,
-                    designation=faculty_designation
+                    designation = faculty_designation
                 )
 
-            return JsonResponse({
+            return render(request, 'courses/index.html', {
                 "result": True,
-                "message": "Excel file uploaded successfully and faculty data added to the database!"
+                "message": "Data successfully uploaded!"
             })
-
         except Exception as e:
             print(f"Error: {e}")
-            return JsonResponse({
+            return render(request, 'courses/index.html', {
                 "result": False,
-                "message": "An error occurred while uploading the Excel file."
+                "message": "Error occurred while uploading the file."
             })
-    elif request.method == 'POST':
-        # Handle single faculty row addition
+    else:
+        return render(request, 'courses/index.html')
+
+@api_view(['POST'])
+def addFacultyRow(request):
+    if request.method == 'POST':
         try:
             # Extract form data from the POST request
+            seniority = request.POST.get('seniority', None)
             faculty_id = request.POST.get('facultyID', None)
             faculty_name = request.POST.get('facultyName', None)
             designation = request.POST.get('designation', None)
+            # Assuming faculty is non-admin
+            role = 2
 
             # Ensure all fields are provided
             if not all([faculty_id, faculty_name, designation]):
@@ -170,30 +173,55 @@ def uploadFacultyList(request):
                     "message": "All fields (Faculty ID, Name, Designation) are required."
                 })
 
+            # Query to get the max seniority value
+            query_seniority = "SELECT MAX(seniority) FROM tb_faculty"
+            
+            # Execute the query to get the current max seniority
+            with connection.cursor() as cursor:
+                cursor.execute(query_seniority)
+                rows = cursor.fetchall()
+
+            # Ensure we have a result from the query
+            if rows and rows[0][0] is not None:
+                max_seniority = int(rows[0][0])
+            else:
+                max_seniority = 0  # If no records exist, max seniority would be 0
+
+            # Check if the seniority value is within acceptable range
+            if int(seniority) > max_seniority + 1:
+                return JsonResponse({
+                    "result": False,
+                    "message": f"Seniority can be at max {max_seniority + 1}!"
+                })
+            
+            # Update the seniority of existing faculty records if necessary
+            query_update_seniority = "UPDATE tb_faculty SET seniority = seniority + 1 WHERE seniority >= %s"
+            with connection.cursor() as cursor:
+                cursor.execute(query_update_seniority, [int(seniority)])
+
             # Create a new faculty record in the database
             tb_faculty.objects.create(
+                seniority=seniority,
                 faculty_id=faculty_id,
                 faculty_name=faculty_name,
-                faculty_password="Manipal@123",  # Default password
-                role_id=1,  # Assuming role_id is always 1 for faculty
+                faculty_password="Manipal@123",  # Default password 
+                role_id=role,  # Assuming role_id is 2 for non-admin faculty
                 designation=designation
             )
 
+            # Return success response
             return JsonResponse({
                 "result": True,
                 "message": "Faculty member added successfully!"
             })
         except Exception as e:
+            # Log and return error response
             print(f"Error: {e}")
             return JsonResponse({
                 "result": False,
                 "message": "An error occurred while adding the faculty member."
             })
-    else:
-        return JsonResponse({
-            "result": False,
-            "message": "Invalid request. Please upload a file or submit faculty data."
-        })
 
+ 
 
 
