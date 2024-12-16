@@ -1,0 +1,272 @@
+<html lang="en">
+    
+    
+       
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Description Input</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+         .navbar-nav {
+                margin-left: 90%;
+            }
+    
+            .nav-link {
+                font-weight: bold;
+            }
+    
+            .navbar {
+                margin-bottom: 20px;
+            }
+        body {
+            background-color: #f8f9fa;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .textbox-container {
+            display: flex;
+            justify-content: center;
+        }
+
+        textarea {
+            width: 90%;
+            height: 500px;
+            resize: none;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0056b3;
+        }
+
+        .header {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn-secondary {
+            margin: 5px;
+        }
+
+        /* Animation Styles for the Save Description button */
+        .btn-outline-success {
+            border: 2px solid #28a745;
+            color: #28a745;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background: #28a745;
+            color: #ffffff;
+            transform: scale(1.1); /* Add scale effect on hover */
+        }
+
+        .btn-outline-success:active {
+            transform: scale(0.95); /* Shrink effect when clicked */
+        }
+        
+        /* Animation for page fade-in */
+        body {
+            font-family: 'Arial', sans-serif;
+            animation: fadeInAnimation ease 1s;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+            background: #ffffff;
+            color: #333333;
+        }
+
+        @keyframes fadeInAnimation {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+     <!-- Navbar -->
+     <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <!-- Navbar Toggler (for mobile view) -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Links -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Courses Link -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Courses</a>
+                    </li>
+                    <!-- Faculty Link -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Faculty</a>
+                    </li>
+
+                    <!-- User Link (Visible only to admin) -->
+                    <li class="nav-item" id="userLink">
+                        <a class="nav-link" href="#">User</a>
+                    </li>
+                </ul>
+
+                <!-- Sign Out Link -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Sign Out</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="header">
+        <h2>Course Description Input</h2>
+        <p>Select a Course ID and enter its description below.</p>
+    </div>
+
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Buttons for Course ID Selection -->
+    <div id="btnGroup" class="btn-group">
+        <!-- Buttons will be dynamically generated -->
+    </div>
+
+    <!-- Textbox for Course Description -->
+    <div class="textbox-container">
+        <textarea id="courseDescription" placeholder="Select a course ID to enter its description..."></textarea>
+    </div>
+
+    <!-- Save Button -->
+    <div class="text-center mt-3">
+        <button class="btn btn-outline-success" onclick="saveDescription()">Save Description</button>
+    </div>
+
+    <!-- JavaScript for API Interaction -->
+    <script>
+        const facultyId = "FAC001"; // Replace with the actual faculty ID (dynamic in real implementation)
+        const apiUrl = "http://127.0.0.1:8000/api/faculty/getcourselist"; // Replace with your API endpoint
+        let selectedCourseId = null;
+
+        // Fetch Courses for the Faculty and Populate Buttons
+        async function fetchCourses() {
+            try {
+                const response = await fetch(`${apiUrl}?faculty_id=${facultyId}`);
+                const data = await response.json();
+                const btnGroup = document.getElementById("btnGroup");
+
+                // Clear existing buttons
+                btnGroup.innerHTML = "";
+
+                if (data.courses && data.courses.length > 0) {
+                    data.courses.forEach(course => {
+                        const button = document.createElement("button");
+                        button.className = "btn btn-secondary me-2";
+                        button.innerText = course.course_code + '-' + course.course_name;
+                        button.onclick = () => selectCourse(course.course_code);
+                        btnGroup.appendChild(button);
+                    });
+                } else {
+                    btnGroup.innerHTML = "<p>No courses available for this faculty.</p>";
+                }
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+            }
+        }
+
+        // Select Course and Update Placeholder
+        function selectCourse(courseId) {
+            selectedCourseId = courseId;
+            document.getElementById("courseDescription").placeholder = `Enter description for ${courseId}...`;
+
+            // Update button styles for better UX
+            const buttons = document.querySelectorAll("#btnGroup button");
+            buttons.forEach(btn => btn.classList.remove("btn-primary"));
+            buttons.forEach(btn => btn.classList.add("btn-secondary"));
+            const selectedButton = Array.from(buttons).find(btn => btn.innerText === courseId);
+            selectedButton.classList.add("btn-primary");
+        }
+
+        // Save Course Description
+        async function saveDescription() {
+            const description = document.getElementById("courseDescription").value;
+
+            if (!selectedCourseId) {
+                alert("Please select a course ID first.");
+                return;
+            }
+
+            if (!description.trim()) {
+                alert("Please enter a description.");
+                return;
+            }
+
+            // Retrieve CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            try {
+                const response = await fetch(`${apiUrl}/saveDescription`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrfToken  // CSRF token included here
+                    },
+                    body: JSON.stringify({
+                        facultyId,
+                        courseId: selectedCourseId,
+                        description,
+                    }),
+                });
+
+                if (response.ok) {
+                    alert("Course description saved successfully!");
+                    document.getElementById("courseDescription").value = "";
+                } else {
+                    const errorData = await response.json();
+                    alert(`Error saving description: ${errorData.message}`);
+                }
+            } catch (error) {
+                console.error("Error saving description:", error);
+            }
+        }
+
+        // Initialize UI
+        fetchCourses();
+
+         // Logic to show User link only for admin
+         const userRole = "admin"; // Replace with actual role check logic
+    
+        if (userRole !== "admin") {
+            document.getElementById("userLink").style.display = "none";
+        }
+
+
+    </script>
+     <!-- Bootstrap JS -->
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>

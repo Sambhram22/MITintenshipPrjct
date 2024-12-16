@@ -222,6 +222,35 @@ def addFacultyRow(request):
                 "message": "An error occurred while adding the faculty member."
             })
 
- 
+#api to fetch courseid from database for adding course description
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+@csrf_exempt
+def addCourseDesc(request):
+    if request.method == "GET":
+        faculty_id = request.GET.get("facultyId")
+        # Replace with actual query logic to fetch courses for the faculty
+        courses = [
+            {"course_id": "CSE101"},
+            {"course_id": "CSE102"},
+        ]
+        return JsonResponse({"courses": courses})
+
+    elif request.method == "POST":
+        data = json.loads(request.body)
+        faculty_id = data.get("facultyId")
+        course_id = data.get("courseId")
+        description = data.get("description")
+
+        # Replace with logic to save the description to the database
+        # Example:
+        # Course.objects.filter(course_id=course_id, faculty_id=faculty_id).update(description=description)
+
+        return JsonResponse({"message": "Description saved successfully!"})
+
+    return JsonResponse({"error": "Invalid request method."}, status=400)
+
 
 
