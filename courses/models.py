@@ -57,6 +57,18 @@ class tb_course(models.Model):
 
     def __str__(self):
         return self.course_name
+    
+
+class tb_course_faculty_mapping(models.Model):
+    course_code = models.CharField(max_length=45, primary_key=False)  
+    faculty_id = models.CharField(max_length=45)
+    academic_year = models.IntegerField()
+   
+    class Meta:
+        db_table = 'tb_course_faculty_mapping'  # Table name in MySQL
+
+    def __str__(self):
+        return self.student_name
 class tb_lesson_plan(models.Model):
     id = models.AutoField(primary_key=True)  # Auto-incrementing primary key
     lesson_id = models.IntegerField(unique=True)  # Unique lesson_id

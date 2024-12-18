@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Admin Navbar</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Navbar Background and Text Color */
+        .navbar {
+            background-color: #1E1E2F; /* Dark Blue-Gray */
+            padding: 1rem 2rem;
+        }
+
+        .navbar .nav-link {
+            color: #FFFFFF; /* White text */
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        /* Hover effect for links */
+        .navbar .nav-link:hover {
+            color: #FFD700; /* Gold */
+        }
+
+        /* Dropdown Background and Text */
+        .dropdown-menu {
+            background-color: #F8F9FA; /* Light Gray */
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-item {
+            color: #1E1E2F; /* Dark Blue-Gray */
+            font-weight: bold;
+        }
+
+        .dropdown-item:hover {
+            background-color: #FFD700; /* Gold background */
+            color: #1E1E2F; /* Dark text */
+        }
+
+        /* Sign Out Button Styling */
+        .sign-out .nav-link {
+            color: #FFFFFF;
+            background-color: #D72638; /* Vibrant Red */
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .sign-out .nav-link:hover {
+            background-color: #B22222; /* Dark Red */
+            color: #FFFFFF;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <!-- User Label (Visible only to Admin) -->
+                <li class="nav-item admin-only">
+                    <a class="nav-link" href="#">User</a>
+                </li>
+
+                <!-- Faculty Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownFaculty" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Faculty
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownFaculty">
+                        <a class="dropdown-item" href="#">Faculty Profile</a>
+                        <a class="dropdown-item" href="#">Faculty Resources</a>
+                        <a class="dropdown-item" href="#">Faculty Support</a>
+                    </div>
+                </li>
+
+                <!-- Courses Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownCourses" data-bs-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                        Courses
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownCourses">
+                        <a class="dropdown-item" href="#">Undergraduate</a>
+                        <a class="dropdown-item" href="#">Postgraduate</a>
+                        <a class="dropdown-item" href="#">Doctoral</a>
+                    </div>
+                </li>
+            </ul>
+            <!-- Sign Out Option -->
+            <ul class="navbar-nav sign-out">
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Sign Out</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        // JavaScript to handle admin visibility
+        const isAdmin = true; // Change to false for non-admin users
+
+        if (!isAdmin) {
+            document.querySelector('.admin-only').style.display = 'none';
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

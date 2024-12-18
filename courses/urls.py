@@ -8,5 +8,6 @@ urlpatterns = [
     path('addLessonDetails/', views.addLessonDetails, name='addLessonDetails'), 
     path('uploadFacultyList/', views.uploadFacultyList, name='uploadFacultyList'),
     path('addFacultyRow/', views.addFacultyRow, name='addFacultyRow'),
-    path('addCourseDesc/', views.addCourseDesc, name='addCourseDesc')
+    path('addCourseDesc/', views.addCourseDesc, name='addCourseDesc'),
+    path('getFacultyList/', views.getFacultyList, name='getFacultyList')
 ]

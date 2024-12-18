@@ -6,6 +6,13 @@ from django.db import connection
 from .models import tb_faculty
 import pandas as pd
 from django.http import JsonResponse  # Add this import
+from .models import tb_course_faculty_mapping
+from django.db.models import Max, F
+from . import models
+from django.db.models import F
+
+
+
 
 
 
@@ -103,124 +110,164 @@ def addLessonDetails(request):
             "message": f"An error occurred: {str(e)}"
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+from django.http import JsonResponse
 
-@api_view(['GET', 'POST'])
+@api_view(['POST', 'GET'])
 def uploadFacultyList(request):
     if request.method == 'POST':
         try:
             # Get the uploaded file
             excel_file = request.FILES['file']
-            print(excel_file)
+            print(f"Received file: {excel_file.name}")
 
             # Check if the file has the correct extension
-            if not excel_file.name.endswith('.xlsx') and not excel_file.name.endswith('.xls'):
-                return render(request, 'courses/index.html', {
+            if not excel_file.name.endswith(('.xlsx', '.xls')):
+                return JsonResponse({
                     "result": False,
-                    "message": "File not proper"
+                    "message": "Invalid file format. Please upload an Excel file."
                 })
 
-            # Use pandas to read the Excel file (openpyxl is used under the hood)
+            # Use pandas to read the Excel file
             df = pd.read_excel(excel_file)
-            print(df)
+            print(f"Data read from Excel: {df}")
 
-            # Loop through the rows of the DataFrame and save to the database
+            # Initialize variables to store error and success information
+            existing_faculty_ids = set(tb_faculty.objects.values_list('faculty_id', flat=True))
+            error_rows = []  # List to track existing faculty IDs
+            uploaded_rows = []  # List to track successfully uploaded records
+
+            used_seniorities = set(tb_faculty.objects.values_list('seniority', flat=True))
+
+            # Loop through the rows of the DataFrame
             for index, row in df.iterrows():
                 # Extract data from the row
                 seniority = row.get('Sl.No')
-                id = row.get('ID')
-                faculty_name = row.get('Name of the Faculty', '')  # Default empty string if not present
-                faculty_designation = row.get('Designation', '')  # Default empty string if not present
+                faculty_id = row.get('ID')
+                faculty_name = row.get('Name of the Faculty', '')
+                faculty_designation = row.get('Designation', '')
 
-                # Create a new student record in the database
-                tb_faculty.objects.create(
-                    seniority=seniority,
-                    faculty_id=id,
-                    faculty_name=faculty_name,
-                    faculty_password="Manipal@123",
-                    role_id=1,
-                    designation = faculty_designation
-                )
+                # Skip if faculty_id or seniority is missing or invalid
+                if pd.isna(faculty_id) or pd.isna(seniority):
+                    continue
 
-            return render(request, 'courses/index.html', {
+                conflicting_records = tb_faculty.objects.filter(seniority__gte=seniority).order_by('seniority')
+
+                if conflicting_records.exists():
+                # Step 2: Shift the seniority of existing records in ascending order
+                    for record in conflicting_records:
+                    # Only increment seniority if the record's seniority is >= excel_seniority
+                        if record.seniority >= seniority:
+                            record.seniority += 1
+                            record.save()
+
+
+
+                # Check if the faculty ID already exists
+                if faculty_id in existing_faculty_ids:
+                    # If the faculty ID exists, add to the error list
+                    error_rows.append(faculty_id)
+                else:
+                    # If faculty ID does not exist, add to the database and track success
+                    tb_faculty.objects.create(
+                        seniority=seniority,
+                        faculty_id=faculty_id,
+                        faculty_name=faculty_name,
+                        faculty_password="Manipal@123",  # Default password
+                        role_id=1,
+                        designation=faculty_designation
+                    )
+                    uploaded_rows.append(faculty_id)
+
+                used_seniorities.add(seniority)
+
+            # Prepare messages based on the result
+            if error_rows:
+                error_message = f"Some faculty IDs already exist in the database:\n" + "\n".join(map(str, error_rows))
+                success_message = f"{len(uploaded_rows)} records successfully uploaded!"
+                return JsonResponse({
+                    "result": False,
+                    "message": error_message + "\n\n" + success_message
+                })
+
+            success_message = f"Successfully uploaded {len(uploaded_rows)} records!"
+            return JsonResponse({
                 "result": True,
-                "message": "Data successfully uploaded!"
+                "message": success_message
             })
+
         except Exception as e:
+            # Print the error and traceback
             print(f"Error: {e}")
-            return render(request, 'courses/index.html', {
+            return JsonResponse({
                 "result": False,
-                "message": "Error occurred while uploading the file."
+                "message": f"An error occurred while uploading the file: {str(e)}"
             })
     else:
-        return render(request, 'courses/index.html')
+        return render(request, "courses/index.html")
+
+
+    
 
 @api_view(['POST'])
 def addFacultyRow(request):
     if request.method == 'POST':
         try:
-            # Extract form data from the POST request
-            seniority = request.POST.get('seniority', None)
+            # Extract form data
             faculty_id = request.POST.get('facultyID', None)
             faculty_name = request.POST.get('facultyName', None)
             designation = request.POST.get('designation', None)
-            # Assuming faculty is non-admin
-            role = 2
+            seniority = request.POST.get('seniority', None)
 
-            # Ensure all fields are provided
-            if not all([faculty_id, faculty_name, designation]):
+            # Ensure required fields are provided
+            if not all([faculty_id, faculty_name, designation, seniority]):
                 return JsonResponse({
                     "result": False,
-                    "message": "All fields (Faculty ID, Name, Designation) are required."
+                    "message": "All fields (Faculty ID, Name, Designation, Seniority) are required."
                 })
 
-            # Query to get the max seniority value
-            query_seniority = "SELECT MAX(seniority) FROM tb_faculty"
-            
-            # Execute the query to get the current max seniority
-            with connection.cursor() as cursor:
-                cursor.execute(query_seniority)
-                rows = cursor.fetchall()
+            # Check if the faculty ID already exists
+            if tb_faculty.objects.filter(faculty_id=faculty_id).exists():
+                return JsonResponse({
+                    "result": False,
+                    "message": f"Faculty ID '{faculty_id}' already exists in the database."
+                })
 
-            # Ensure we have a result from the query
-            if rows and rows[0][0] is not None:
-                max_seniority = int(rows[0][0])
-            else:
-                max_seniority = 0  # If no records exist, max seniority would be 0
-
-            # Check if the seniority value is within acceptable range
+            # Additional seniority validation (if applicable)
+            max_seniority = tb_faculty.objects.aggregate(Max('seniority'))['seniority__max'] or 0
             if int(seniority) > max_seniority + 1:
                 return JsonResponse({
                     "result": False,
-                    "message": f"Seniority can be at max {max_seniority + 1}!"
+                    "message": f"Seniority can be at max {max_seniority + 1}."
                 })
-            
-            # Update the seniority of existing faculty records if necessary
-            query_update_seniority = "UPDATE tb_faculty SET seniority = seniority + 1 WHERE seniority >= %s"
-            with connection.cursor() as cursor:
-                cursor.execute(query_update_seniority, [int(seniority)])
 
-            # Create a new faculty record in the database
-            tb_faculty.objects.create(
-                seniority=seniority,
-                faculty_id=faculty_id,
-                faculty_name=faculty_name,
-                faculty_password="Manipal@123",  # Default password 
-                role_id=role,  # Assuming role_id is 2 for non-admin faculty
-                designation=designation
+            # Update seniority of existing records
+            tb_faculty.objects.filter(seniority__gte=int(seniority)).update(
+                seniority=F('seniority') + 1
             )
 
-            # Return success response
+            # Create the new faculty record
+            tb_faculty.objects.create(
+                faculty_id=faculty_id,
+                faculty_name=faculty_name,
+                designation=designation,
+                seniority=seniority,
+                faculty_password="Manipal@123",  # Default password
+                role_id=2  # Assuming role_id is 2 for non-admin faculty
+            )
+
             return JsonResponse({
                 "result": True,
-                "message": "Faculty member added successfully!"
+                "message": "Faculty member added successfully."
             })
+
         except Exception as e:
-            # Log and return error response
             print(f"Error: {e}")
             return JsonResponse({
                 "result": False,
                 "message": "An error occurred while adding the faculty member."
             })
+
+
 
 #api to fetch courseid from database for adding course description
 from django.http import JsonResponse
@@ -251,6 +298,50 @@ def addCourseDesc(request):
         return JsonResponse({"message": "Description saved successfully!"})
 
     return JsonResponse({"error": "Invalid request method."}, status=400)
+
+
+@api_view(['GET'])
+def getFacultyList(request):
+    try:
+        # SQL query to fetch faculty details
+        query = """
+            SELECT seniority, faculty_id, faculty_name, designation
+            FROM tb_faculty
+            ORDER BY seniority
+        """
+
+        # Execute the query using the database connection
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        # Prepare the response data
+        faculty_list = []
+        for row in rows:
+            faculty_list.append({
+                'seniority': row[0],
+                'faculty_id': row[1],
+                'faculty_name': row[2],
+                'designation': row[3]
+            })
+
+        # Response structure
+        result = {
+            "result": True,
+            "message": "Fetched successfully",
+            "faculty_list": faculty_list
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Catch any exception and return a server error message
+        return Response({
+            "result": False,
+            "message": f"An error occurred: {str(e)}"
+        }, status=status.HTTP_200_OK)
+
+
 
 
 

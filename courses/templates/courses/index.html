@@ -99,6 +99,7 @@
 </head>
 
 <body>
+    <!-- <iframe src="navigation.html" width="100%" height="auto"></iframe> -->
 
     <div class="container py-5" data-aos="fade-up">
 
@@ -174,6 +175,7 @@
                         <table id="facultyTable" class="table table-striped table-bordered">
                             <thead>
                                 <tr>
+                                    <th>Seniority</th>
                                     <th>Faculty ID</th>
                                     <th>Faculty Name</th>
                                     <th>Designation</th>
@@ -204,33 +206,35 @@
     <!-- DataTable Initialization and API call -->
     <script>
 
-        function getFacultyList(){
+
+        function getFacultyList() {
             var table = $('#facultyTable').DataTable();
 
-            // Call API to get faculty list
-
- $.ajax({
-                url: 'http://127.0.0.1:8000/api/faculty/uploadfacultylist/',  // Replace with your actual API URL
-                method: 'GET',
-                success: function(response) {
-                    // Assuming the response is an array of faculty objects
-                    var facultyList = response.faculty_list;  // This should be an array of faculty objects
-                    console.log(response)
-                    // Loop through the array and populate the table
-                    facultyList.forEach(function(faculty) {
-                        table.row.add([
-                            faculty.faculty_id,       // Faculty ID
-                            faculty.faculty_name,            // Faculty Name
-                            faculty.designation,      // Department
-                        ]).draw();
-                    });
-                },
-                error: function(error) {
-                    console.error('Error fetching faculty data:', error);
-                    alert('Error fetching faculty data.');
-                }
+    // Call API to get faculty list
+    $.ajax({
+        url: 'http://127.0.0.1:8000/courses/getFacultyList/',  // Replace with your actual API URL
+        method: 'GET',
+        success: function(response) {
+            // Assuming the response is an array of faculty objects
+            var facultyList = response.faculty_list;  // This should be an array of faculty objects
+            console.log(response);
+            // Loop through the array and populate the table
+            facultyList.forEach(function(faculty) {
+                table.row.add([
+                    faculty.seniority,         // Seniority
+                    faculty.faculty_id,        // Faculty ID
+                    faculty.faculty_name,      // Faculty Name
+                    faculty.designation        // Designation
+                ]).draw();
             });
+        },
+        error: function(error) {
+            console.error('Error fetching faculty data:', error);
+            alert('Error fetching faculty data.');
         }
+    });
+}
+
 
         $(document).ready(function() {
             // Initialize DataTable
@@ -238,74 +242,87 @@
         });
 
         function uploadExcel() {
-            const fileInput = document.getElementById('fileUpload');
-            const file = fileInput.files[0];
+    const fileInput = document.getElementById('fileUpload');
+    const file = fileInput.files[0];
 
-            if (!file) {
-                alert('Please select a file to upload.');
-                return;
+    if (!file) {
+        alert('Please select a file to upload.');
+        return;
+    }
+
+    const allowedExtensions = /(\.xls|\.xlsx)$/i;
+    if (!allowedExtensions.exec(file.name)) {
+        alert('Invalid file type. Please upload an Excel file (.xls or .xlsx).');
+        fileInput.value = '';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Make the AJAX request to upload the Excel file
+    $.ajax({
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'  // Use Django's CSRF token template tag
+        },
+        url: 'http://127.0.0.1:8000/courses/uploadFacultyList/',  // Replace with your API endpoint for uploading the file
+        type: 'POST',
+        data: formData,
+        contentType: false,  // Don't set content type, as it's automatically handled by FormData
+        processData: false,  // Don't process the data (FormData handles it)
+        success: function(response) {
+            // Check the result of the response
+            if (response.result === false) {
+                // If the result is false, display the error message
+                alert(response.message);  // Display the error message
+            } else {
+                // If the result is true, display the success message
+                alert(response.message);  // Display the success message
             }
-
-            const allowedExtensions = /(\.xls|\.xlsx)$/i;
-            if (!allowedExtensions.exec(file.name)) {
-                alert('Invalid file type. Please upload an Excel file (.xls or .xlsx).');
-                fileInput.value = '';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Make the AJAX request to upload the Excel file
-            $.ajax({
-                headers: {
-                'X-CSRFToken': '{{ csrf_token }}'  // Use Django's CSRF token template tag
-                 },
-                url: 'http://127.0.0.1:8000/api/faculty/uploadfacultylist/',  // Replace with your API endpoint for uploading the file
-                type: 'POST',
-                data: formData,
-                contentType: false,  // Don't set content type, as it's automatically handled by FormData
-                processData: false,  // Don't process the data (FormData handles it)
-                success: function(response) {
-                    // Handle success
-                    //console.log('File uploaded successfully:', response);
-                    alert('File uploaded successfully!');
-                },
-                error: function(error) {
-                    // Handle error
-                   // console.error('Error uploading file:', error);
-                    alert('Error uploading file.');
-                }
-            });
+        },
+        error: function(error) {
+            // Handle error (e.g., network issues)
+            alert('Error uploading file.');
         }
+    });
+}
+
 
         
-        function saveFaculty(){
-            var data={
-                "seniority":  $("#txtseniority").val(),
-                "facultyID":  $("#txtfacultyID").val(),
-                "facultyName":  $("#txtfacultyName").val(),
-                "designation":  $("#txtdesignation").val(),
+        function saveFaculty() {
+    var data = {
+        "seniority": $("#txtseniority").val(),
+        "facultyID": $("#txtfacultyID").val(),
+        "facultyName": $("#txtfacultyName").val(),
+        "designation": $("#txtdesignation").val(),
+    };
+
+    $.ajax({
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}' // Use Django's CSRF token template tag
+        },
+        url: 'http://127.0.0.1:8000/courses/addFacultyRow/', // Your API endpoint for saving data
+        type: 'POST',
+        data: data,
+        success: function(response) {
+            if (response.result) {
+                // If the response indicates success
+                alert('Faculty member added successfully!');
+                // Optionally, refresh the table or clear the form fields
+                location.reload();
+            } else {
+                // If the response indicates failure, show the error message
+                alert(response.message);
             }
-            $.ajax({
-                headers: {
-                'X-CSRFToken': '{{ csrf_token }}'  // Use Django's CSRF token template tag
-                 },
-                url: 'http://127.0.0.1:8000/api/faculty/getfacultylist',  // Replace with your API endpoint for uploading the file
-                type: 'POST',
-                data: data,
-                success: function(response) {
-                    // Handle success
-                    //console.log('File uploaded successfully:', response);
-                    alert('File uploaded successfully!');
-                },
-                error: function(error) {
-                    // Handle error
-                   // console.error('Error uploading file:', error);
-                    alert('Error uploading file.');
-                }
-            });
+        },
+        error: function(error) {
+            // Handle error
+            console.error('Error saving faculty data:', error);
+            alert('An unexpected error occurred. Please try again.');
         }
+    });
+}
+
     </script>
 
 </body>
