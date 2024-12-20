@@ -468,3 +468,149 @@ def updateCourseOutcome(request,id):
         # Return error response
         return Response({"result": False, "message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+from django.shortcuts import render
+from django.db import connection
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
+@api_view(['GET'])
+def getCourseLearningOutcomes(request):
+    """
+    Fetch course learning outcomes and display them in the table.
+    """
+    try:
+        # Fetch faculty_id and role_id from the query parameters
+        faculty_id = request.query_params.get('faculty_id')
+        role_id = request.query_params.get('role_id')
+
+        # Build the WHERE clause dynamically based on role_id
+        whereClause = ' WHERE 1=1 '
+        if role_id == '2' or role_id == '3':
+            # Sanitize faculty_id to prevent SQL injection
+            faculty_id = str(faculty_id).replace("'", "''")
+            whereClause = f" WHERE course_code IN (SELECT course_code FROM tb_course_faculty_mapping WHERE faculty_id = '{faculty_id}')"
+
+        # SQL query to fetch the data
+        query = f"""
+            SELECT co_num, description, contact_hours, marks, program_outcomes, learning_outcomes, bl, course_code, id
+            FROM tb_course_outcomes
+            {whereClause}
+            ORDER BY id
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        # Prepare the response data
+        course_learning_outcomes = []
+        for row in rows:
+            course_learning_outcomes.append({
+                'co_num': row[0],
+                'description': row[1],
+                'contact_hours': row[2],
+                'marks': row[3],
+                'program_outcomes': row[4],
+                'learning_outcomes': row[5],
+                'bl': row[6],
+                'course_code': row[7],
+                'id': row[8]
+            })
+
+        print(course_learning_outcomes)
+        result = {
+            "result": True,
+            "message": "Fetched successfully",
+            "course_learning_outcomes": course_learning_outcomes
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print("Error occurred:", str(e))
+        return Response({
+            "result": False,
+            "message": f"An error occurred: {str(e)}"
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PUT'])
+def updateCourseLearningOutcome(request, id):
+    """
+    Update specific fields (contact hours and marks) for a course learning outcome.
+    """
+    try:
+        contact_hours = request.data.get('contact_hours')
+        marks = request.data.get('marks')
+
+        if not id or contact_hours is None or marks is None:
+            return Response({"result": False, "message": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+        query = "UPDATE tb_course_outcomes SET contact_hours = %s, marks = %s WHERE id = %s"
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, [contact_hours, marks, id])
+
+        result = {
+            "result": True,
+            "message": "Updated successfully",
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return Response({"result": False, "message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def getCourseLearningOutcomesPage(request):
+    """
+    Render the HTML page for displaying the course learning outcomes table.
+    """
+    return render(request, 'courses/course_learning_outcome.html')
+
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.db import connection
+from .models import TbIctTool
+from .serializers import TbIctToolSerializer
+
+@api_view(['GET'])
+def ict_tool_page(request):
+    return render(request, 'courses/ict_tools.html')
+
+@api_view(['POST'])
+def add_ict_tool_api(request):
+    """
+    API to add a new ICT Tool record to the database.
+    """
+    try:
+        serializer = TbIctToolSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'result': True, 'message': 'ICT Tool added successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'result': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(f"Error adding ICT Tool: {e}")
+        return Response({'result': False, 'message': f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def get_ict_tools_api(request):
+    """
+    API to fetch all ICT Tool records from the database.
+    """
+    try:
+        ict_tools = TbIctTool.objects.all()
+        serializer = TbIctToolSerializer(ict_tools, many=True)
+        return Response({'result': True, 'ict_tools': serializer.data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error fetching ICT Tools: {e}")
+        return Response({'result': False, 'message': f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

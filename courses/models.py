@@ -104,5 +104,23 @@ class tb_course_outcomes(models.Model):
 
     def __str__(self):
         return f"{self.co_num}: {self.description[:50]}..."  # Truncate for readability
+    
+
+from django.db import models
+
+class TbIctTool(models.Model):
+    id = models.AutoField(primary_key=True)  # Auto-incrementing primary key
+    ict_tool_used = models.CharField(max_length=200)  # Corresponds to VARCHAR(200)
+    details = models.CharField(max_length=250)  # Corresponds to VARCHAR(250)
+    course_code = models.CharField(max_length=45)  # Corresponds to VARCHAR(45)
+
+    class Meta:
+        db_table = 'tb_ict_tools'  # Explicitly sets the table name
+        verbose_name = 'ICT Tool'
+        verbose_name_plural = 'ICT Tools'
+
+    def __str__(self):
+        return f"{self.ict_tool_used} - {self.course_code}"
+
 
 
