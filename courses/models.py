@@ -83,3 +83,26 @@ class tb_lesson_plan(models.Model):
         return f"Lesson Plan {self.lesson_id} for Course {self.course_id}"
 
 
+
+class tb_course_outcomes(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    co_num = models.CharField(max_length=255)
+    description = models.TextField()
+    contact_hours = models.PositiveIntegerField()  # Ensures non-negative integers
+    marks = models.IntegerField()
+    program_outcomes = models.CharField(max_length=15)
+    program_spec_outcomes = models.CharField(max_length=50)
+    learning_outcomes = models.CharField(max_length=20)
+    bl = models.CharField(max_length=10)
+    course_code = models.CharField(max_length=45)
+
+    class Meta:
+        db_table = 'tb_course_outcomes'  # Optional: matches the table name in the database
+        constraints = [
+            models.CheckConstraint(check=models.Q(contact_hours__gte=0), name='tb_course_outcomes_chk_1'),
+        ]
+
+    def __str__(self):
+        return f"{self.co_num}: {self.description[:50]}..."  # Truncate for readability
+
+

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Course Outcomes</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            animation: fadeInAnimation ease 1s;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+            background: #ffffff;
+            color: #333333;
+        }
+
+        @keyframes fadeInAnimation {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        h4 {
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #333333;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            color: #333333;
+        }
+
+        .card-header {
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 1rem;
+        }
+
+        .btn-outline-success {
+            border: 2px solid #28a745;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .btn-outline-success:hover {
+            background: #28a745;
+            color: #ffffff;
+        }
+
+        .form-control {
+            border-radius: 5px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        small.text-muted {
+            font-size: 0.9rem;
+            color: #666666 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-5" data-aos="fade-up">
+        <div class="row">
+            <div class="col-12">
+                <div class="card" id="dataAdditionCard">
+                    <div class="card-header">
+                        <h4>Course Outcomes</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="addCourseOutcomeForm">
+                            <div class="row">
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tucname">Course Outcome Number:</label>
+                                    <input type="text" id="tucname" name="co_num" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tudes">Description:</label>
+                                    <textarea id="tudes" name="description" class="form-control" required></textarea>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <label for="tuchours">Contact Hours:</label>
+                                    <input type="number" id="tuchours" name="contact_hours" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <label for="tumarks">Marks:</label>
+                                    <input type="number" id="tumarks" name="marks" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-4 mb-3">
+                                    <label for="tpo">Program Outcomes:</label>
+                                    <input type="text" id="tpo" name="program_outcomes" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tpspo">Program Specific Outcomes:</label>
+                                    <input type="text" id="tpspo" name="program_spec_outcomes" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tlo">Learning Outcomes:</label>
+                                    <input type="text" id="tlo" name="learning_outcomes" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tbl">Bloom's Level (BL):</label>
+                                    <input type="text" id="tbl" name="bl" class="form-control" required>
+                                </div>
+                                <div class="col-12 col-md-6 mb-3">
+                                    <label for="tcc">Course Code:</label>
+                                    <input type="text" id="tcc" name="course_code" class="form-control" required>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="button" class="btn btn-outline-success" onclick="submitCourseOutcome()">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Outcome DataTable Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Course Outcome Data Table</h4>
+                    </div>
+                    <div class="card-body">
+                        <table id="courseOutcomeTable" class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Course Number</th>
+                                    <th>Description</th>
+                                    <th>Contact Hours</th>
+                                    <th>Marks</th>
+                                    <th>Program Outcomes</th>
+                                    <th>Program Specific Outcomes</th>
+                                    <th>Bloom's Level</th>
+                                    <th>Course Code</th>
+                                    <th>Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Table will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+
+    <script>
+        var isEditable=false;
+        function handleView(){
+            const role_id=localStorage.getItem('role_id');
+            if(role_id=='1'){
+                $('#dataAdditionCard').show();
+                isEditable=false;
+            }
+            else if(role_id=='2'){
+                $('#dataAdditionCard').hide();
+                isEditable=true;
+            }
+            else{
+                $('#dataAdditionCard').hide();
+                isEditable=false;
+            }
+        }
+          $(document).ready(function() {
+          //  $('#courseOutcomeTable').DataTable();
+          handleView();
+            getCourseOutcome();
+        });
+
+       function getCourseOutcome() {
+    var table = $('#courseOutcomeTable').DataTable();
+    var faculty_id = localStorage.getItem('faculty_id');
+    var role_id = localStorage.getItem('role_id');
+    
+    $.ajax({
+        url: 'http://127.0.0.1:8000/courses/getCourseOutcomes/',
+        method: 'GET',
+        data: {'faculty_id': faculty_id, 'role_id': role_id},
+        success: function(response) {
+            console.log(response);
+            if (response.result) {
+                var courseOutcome = response.course_outcome;
+                table.clear();
+
+                courseOutcome.forEach(function(co) {
+                    // Check if role_id is 2, make Contact Hours and Marks columns editable
+                     isEditable = role_id === '2';
+                    table.row.add([
+                        co.co_num,
+                        co.description,
+                        isEditable ? `<input type="number" value="${co.contact_hours}" class="edit-contact-hours" data-id="${co.id}">` : co.contact_hours,
+                        isEditable ? `<input type="number" value="${co.marks}" class="edit-marks" data-id="${co.id}">` : co.marks,
+                        co.program_outcomes,
+                        co.program_spec_outcomes,
+                        co.bl,
+                        co.course_code,
+                        isEditable ? `<button class="btn btn-outline-success save-btn" data-id="${co.id}">Save</button>` : ''
+                    ]).draw();
+                });
+
+                // Bind the save button click event
+                if (isEditable) {
+                    $(".save-btn").on('click', function() {
+                        var id = $(this).data('id');
+                        var updatedContactHours = $(this).closest('tr').find('.edit-contact-hours').val();
+                        var updatedMarks = $(this).closest('tr').find('.edit-marks').val();
+
+                        // Prepare the data to update
+                        var updatedData = {
+                            contact_hours: updatedContactHours,
+                            marks: updatedMarks
+                        };
+
+                        // Call the update function with the updated data
+                        updateCourseOutcome(id, updatedData);
+                    });
+                }
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function(error) {
+            console.error('Error fetching data:', error);
+            alert('Error fetching data.');
+        }
+    });
+}
+
+function updateCourseOutcome(id, updatedData) {
+    $.ajax({
+        url: `http://127.0.0.1:8000/courses/updateCourseOutcome/${id}/`,  // Ensure the URL matches your Django endpoint for updating course outcomes
+        method: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify(updatedData),
+        success: function(response) {
+            alert(response.message || "Course outcome updated successfully.");
+        },
+        error: function(error) {
+            console.error("Error Response:", error);
+            alert('Error updating course outcome.');
+        }
+    });
+}
+
+      
+
+        function submitCourseOutcome() {
+    // Gather form data
+    const formData = {
+        co_num: $('#tucname').val(),
+        description: $('#tudes').val(),
+        contact_hours: $('#tuchours').val(),
+        marks: $('#tumarks').val(),
+        program_outcomes: $('#tpo').val(),
+        program_spec_outcomes: $('#tpspo').val(),
+        learning_outcomes: $('#tlo').val(),
+        bl: $('#tbl').val(),
+        course_code: $('#tcc').val(),
+    };
+
+    console.log("Form Data:", formData); // Debugging log
+
+    // Send AJAX POST request
+    $.ajax({
+        url: 'api/add_course_outcome/', // Ensure this matches your Django endpoint
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function (response) {
+            // Check if the response contains a message
+            alert(response.message || "Operation completed successfully."); // Alert success message
+            $('#addCourseOutcomeForm')[0].reset(); // Reset form
+            getCourseOutcome(); // Refresh the table
+        },
+        error: function (error) {
+            console.error("Error Response:", error); // Debugging log
+
+            // Extract the error message
+            const errorMessage = error.responseJSON?.message || "An unexpected error occurred.";
+            alert('Error: ' + errorMessage); // Display error in an alert
+        },
+    });
+}
+
+
+    </script>
+</body>
+
+</html>

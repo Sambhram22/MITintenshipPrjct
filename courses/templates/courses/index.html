@@ -263,7 +263,7 @@
     // Make the AJAX request to upload the Excel file
     $.ajax({
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'  // Use Django's CSRF token template tag
+            'X-CSRFToken': '{{ csrf_token }}',  // Use Django's CSRF token template tag
         },
         url: 'http://127.0.0.1:8000/courses/uploadFacultyList/',  // Replace with your API endpoint for uploading the file
         type: 'POST',
@@ -278,6 +278,8 @@
             } else {
                 // If the result is true, display the success message
                 alert(response.message);  // Display the success message
+                // Refresh the page after a successful upload
+                window.location.reload();
             }
         },
         error: function(error) {

@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import connection
-from .models import tb_faculty
+from .models import tb_faculty, tb_course_outcomes
 import pandas as pd
 from django.http import JsonResponse  # Add this import
 from .models import tb_course_faculty_mapping
@@ -343,5 +343,128 @@ def getFacultyList(request):
 
 
 
+@api_view(['GET'])
+def getCourseOutcomes(request):
+    try:
+        # Get faculty ID and role ID
+        faculty_id = request.query_params.get('faculty_id')
+        role_id = request.query_params.get('role_id')
+        print(role_id)
+        print(faculty_id)
+        
+        whereClause = ' WHERE 1=1 '
+        if role_id == '2' or role_id=='3':  # Ensure role_id is compared as a string
+            # Sanitize faculty_id to prevent SQL injection
+            faculty_id = str(faculty_id).replace("'", "''")
+            whereClause = f" WHERE course_code IN (SELECT course_code FROM tb_course_faculty_mapping WHERE faculty_id = '{faculty_id}')"
+        
+        # Construct the query
+        query = f"""
+            SELECT co_num, description, contact_hours, marks, program_outcomes, program_spec_outcomes, bl, course_code,id
+            FROM tb_course_outcomes
+            {whereClause}
+            ORDER BY id
+        """
 
+        # Execute the query using the database connection
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+
+        # Debugging: Print the fetched rows
+      #  print("Fetched rows:", rows)
+
+        # Prepare the response data
+        course_outcome = []
+
+        for row in rows:
+            course_outcome.append({
+                'co_num': row[0],
+                'description': row[1],
+                'contact_hours': row[2],
+                'marks': row[3],
+                'program_outcomes': row[4],
+                'program_spec_outcomes': row[5],
+                'bl': row[6],
+                'course_code': row[7],
+                'id':row[8]
+            })
+        print(course_outcome)
+        # Response structure
+        result = {
+            "result": True,
+            "message": "Fetched successfully",
+            "course_outcome": course_outcome
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Debugging: Log the exception
+        print("Error occurred:", str(e))
+        return Response({
+            "result": False,
+            "message": f"An error occurred: {str(e)}"
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+from django.shortcuts import render, redirect
+
+@api_view(['GET'])
+def getCourseOutcomesPage(request):
+    return render(request, 'courses/course_outcome.html')  # Render form template for GET requests
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import CourseOutcomeSerializer
+
+@api_view(['POST'])
+def add_course_outcome_api(request):
+    if request.method == 'POST':
+        serializer = CourseOutcomeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Course outcome added successfully'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['PUT'])
+def updateCourseOutcome(request,id):
+    try:
+        # Get parameters from the request
+        # id = request.query_params.get('id')
+        contact_hours = request.data.get('contact_hours')
+        marks = request.data.get('marks')
+
+        if not id or contact_hours is None or marks is None:
+            return Response({"result": False, "message": "Missing required parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update query
+        query = "UPDATE tb_course_outcomes SET contact_hours = %s, marks = %s WHERE id = %s"
+
+        with connection.cursor() as cursor:
+            cursor.execute(query, [contact_hours, marks, id])
+            rows = cursor.fetchall()
+
+        if rows:
+            return Response({"result": False, "message": "Course outcome not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Return success response
+        result = {
+            "result": True,
+            "message": "Updated successfully",
+        }
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Log the exception (optional)
+        print(f"Error occurred: {e}")
+        
+        # Return error response
+        return Response({"result": False, "message": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
